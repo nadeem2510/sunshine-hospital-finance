@@ -45,7 +45,7 @@ export default function Payroll() {
       employee_id: emp.id,
       emp,
       days_worked: existing?.days_worked || 26,
-      advance_deduction: existing?.advance_deduction || 0,
+      advance_deduction: existing?.advance_deduction ?? pendingAdvanceTotal,
       incentive: existing?.incentive || 0,
       other_deduction: existing?.other_deduction || 0,
       notes: existing?.notes || '',
