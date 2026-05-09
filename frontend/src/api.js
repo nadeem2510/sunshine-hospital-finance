@@ -31,6 +31,8 @@ export const api = {
   saveAttendance: (empId, data) => req(`/employees/${empId}/attendance`, { method: 'POST', body: data }),
 
   // Advances
+  getNextEmployeeId: () => req('/employees/next-id'),
+  getAllAdvances: () => req('/employees/advances/all'),
   getAdvances: (empId) => req(`/employees/${empId}/advances`),
   createAdvance: (empId, data) => req(`/employees/${empId}/advances`, { method: 'POST', body: data }),
   settleAdvance: (advId, data) => req(`/employees/advances/${advId}/settle`, { method: 'PUT', body: data }),

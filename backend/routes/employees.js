@@ -12,6 +12,27 @@ router.get('/all', (req, res) => {
   res.json(db.prepare('SELECT * FROM employees ORDER BY name').all());
 });
 
+router.get('/next-id', (req, res) => {
+  const db = getDb();
+  const rows = db.prepare("SELECT employee_id FROM employees WHERE employee_id LIKE 'EMP%'").all();
+  let maxNum = 0;
+  rows.forEach(r => {
+    const num = parseInt(r.employee_id.replace('EMP', ''), 10);
+    if (!isNaN(num) && num > maxNum) maxNum = num;
+  });
+  res.json({ employee_id: `EMP${String(maxNum + 1).padStart(3, '0')}` });
+});
+
+router.get('/advances/all', (req, res) => {
+  const db = getDb();
+  res.json(db.prepare(`
+    SELECT a.*, e.name AS employee_name, e.employee_id AS emp_code, e.role, e.base_salary
+    FROM advances a
+    JOIN employees e ON a.employee_id = e.id
+    ORDER BY a.request_date DESC
+  `).all());
+});
+
 router.get('/:id', (req, res) => {
   const db = getDb();
   const emp = db.prepare('SELECT * FROM employees WHERE id = ?').get(req.params.id);

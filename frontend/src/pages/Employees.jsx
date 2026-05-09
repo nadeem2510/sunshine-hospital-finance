@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api';
-import { Plus, Edit2, Trash2, ChevronDown, ChevronUp, User, CreditCard } from 'lucide-react';
+import { Plus, Edit2, Trash2, ChevronDown, ChevronUp, User } from 'lucide-react';
 
 const ROLES = ['Doctor', 'Nursing', 'Housekeeping', 'Administration', 'Pharmacy', 'Lab', 'Other'];
-const PAY_TYPES = ['monthly', 'per_visit'];
 
 function EmployeeForm({ initial, onSave, onCancel }) {
   const [form, setForm] = useState(initial || {
@@ -14,6 +13,12 @@ function EmployeeForm({ initial, onSave, onCancel }) {
 
   const f = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
+  useEffect(() => {
+    if (!initial) {
+      api.getNextEmployeeId().then(data => f('employee_id', data.employee_id)).catch(() => {});
+    }
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     await onSave(form);
@@ -23,7 +28,13 @@ function EmployeeForm({ initial, onSave, onCancel }) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div><label className="label">Full Name *</label><input className="input" value={form.name} onChange={e => f('name', e.target.value)} required /></div>
-        <div><label className="label">Employee ID *</label><input className="input" value={form.employee_id} onChange={e => f('employee_id', e.target.value)} required /></div>
+        <div>
+          <label className="label">Employee ID *</label>
+          <div className="relative">
+            <input className="input bg-gray-50 font-mono" value={form.employee_id} readOnly={!initial} onChange={e => f('employee_id', e.target.value)} required />
+            {!initial && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">Auto</span>}
+          </div>
+        </div>
         <div>
           <label className="label">Role *</label>
           <select className="input" value={form.role} onChange={e => f('role', e.target.value)} required>

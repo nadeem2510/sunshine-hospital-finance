@@ -1,10 +1,11 @@
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Users, DollarSign, ShoppingCart, BookOpen, LogOut, Sun, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Users, DollarSign, ShoppingCart, BookOpen, LogOut, Sun, Menu, X, TrendingDown } from 'lucide-react';
 import { useState } from 'react';
 
 const NAV = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'employees', label: 'Employees', icon: Users },
+  { id: 'advances', label: 'Advances', icon: TrendingDown },
   { id: 'payroll', label: 'Payroll', icon: DollarSign },
   { id: 'vendors', label: 'Vendors', icon: ShoppingCart },
   { id: 'accounts', label: 'Accounts', icon: BookOpen, adminOnly: true },

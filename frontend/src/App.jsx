@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Employees from './pages/Employees';
+import Advances from './pages/Advances';
 import Payroll from './pages/Payroll';
 import Vendors from './pages/Vendors';
 import Accounts from './pages/Accounts';
@@ -14,7 +15,7 @@ function AppInner() {
 
   if (!user) return <Login />;
 
-  const pages = { dashboard: <Dashboard />, employees: <Employees />, payroll: <Payroll />, vendors: <Vendors />, accounts: <Accounts /> };
+  const pages = { dashboard: <Dashboard />, employees: <Employees />, advances: <Advances />, payroll: <Payroll />, vendors: <Vendors />, accounts: <Accounts /> };
 
   return (
     <Layout tab={tab} setTab={setTab}>
