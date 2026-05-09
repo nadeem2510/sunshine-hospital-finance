@@ -75,6 +75,15 @@ async function initializeDatabase() {
   for (const sql of tables) {
     _sqlDb.run(sql);
   }
+
+  // Migrations — add columns that didn't exist in earlier schema
+  const migrations = [
+    'ALTER TABLE salary_records ADD COLUMN paid_amount REAL DEFAULT 0',
+  ];
+  for (const m of migrations) {
+    try { _sqlDb.run(m); } catch (_) {}
+  }
+
   save();
 
   // Seed default users

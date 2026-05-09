@@ -61,9 +61,14 @@ router.post('/calculate', (req, res) => {
 
 router.put('/:id/pay', (req, res) => {
   const db = getDb();
-  const { payment_date, payment_mode } = req.body;
-  db.prepare('UPDATE salary_records SET status=?, payment_date=?, payment_mode=? WHERE id=?').run('paid', payment_date, payment_mode, +req.params.id);
-  res.json({ success: true });
+  const { payment_date, payment_mode, paid_amount } = req.body;
+  const record = db.prepare('SELECT * FROM salary_records WHERE id = ?').get(+req.params.id);
+  if (!record) return res.status(404).json({ error: 'Record not found' });
+  const totalPaid = (record.paid_amount || 0) + (+paid_amount || 0);
+  const status = totalPaid >= record.net_payable ? 'paid' : totalPaid > 0 ? 'partial' : record.status;
+  db.prepare('UPDATE salary_records SET status=?, payment_date=?, payment_mode=?, paid_amount=? WHERE id=?')
+    .run(status, payment_date, payment_mode, totalPaid, +req.params.id);
+  res.json({ success: true, status, total_paid: totalPaid });
 });
 
 module.exports = router;
