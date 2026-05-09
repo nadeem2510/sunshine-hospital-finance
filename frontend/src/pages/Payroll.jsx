@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api';
-import { Calculator, FileText, CheckCircle, Clock } from 'lucide-react';
+import { Calculator, FileText, CheckCircle, Clock, AlertCircle, TrendingDown } from 'lucide-react';
 import { generateSalarySlipPDF } from '../utils/pdfGenerator';
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -32,8 +32,15 @@ export default function Payroll() {
 
   useEffect(() => { load(); }, [month, year]);
 
-  const openCalc = (emp) => {
+  const openCalc = async (emp) => {
     const existing = records.find(r => r.employee_id === emp.id);
+    let pendingAdvanceTotal = 0;
+    let pendingAdvances = [];
+    try {
+      const advances = await api.getAdvances(emp.id);
+      pendingAdvances = advances.filter(a => a.repayment_status !== 'settled');
+      pendingAdvanceTotal = pendingAdvances.reduce((sum, a) => sum + (a.amount - (a.repaid_amount || 0)), 0);
+    } catch (_) {}
     setCalcForm({
       employee_id: emp.id,
       emp,
@@ -42,7 +49,9 @@ export default function Payroll() {
       incentive: existing?.incentive || 0,
       other_deduction: existing?.other_deduction || 0,
       notes: existing?.notes || '',
-      existing
+      existing,
+      pendingAdvanceTotal,
+      pendingAdvances,
     });
   };
 
@@ -113,6 +122,45 @@ export default function Payroll() {
               <p className="text-sm text-gray-500">{calcForm.emp.name} — {SHORT_MONTHS[month - 1]} {year}</p>
             </div>
             <form onSubmit={handleCalculate} className="p-5 space-y-4">
+              {/* Pending Advance Alert */}
+              {calcForm.pendingAdvanceTotal > 0 && (
+                <div className={`p-3 rounded-xl border flex items-start gap-3 ${
+                  calcForm.pendingAdvanceTotal > (calcForm.emp.base_salary * 0.5)
+                    ? 'bg-orange-50 border-orange-200'
+                    : 'bg-yellow-50 border-yellow-200'
+                }`}>
+                  <TrendingDown size={18} className={calcForm.pendingAdvanceTotal > (calcForm.emp.base_salary * 0.5) ? 'text-orange-500 mt-0.5 flex-shrink-0' : 'text-yellow-600 mt-0.5 flex-shrink-0'} />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-gray-800">
+                      Pending Advance Balance: <span className="text-red-600">{fmt(calcForm.pendingAdvanceTotal)}</span>
+                      {calcForm.pendingAdvanceTotal > (calcForm.emp.base_salary * 0.5) && (
+                        <span className="ml-2 text-xs text-orange-600 font-normal">(exceeds 50% of salary)</span>
+                      )}
+                    </p>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {calcForm.pendingAdvances.map(a => (
+                        <span key={a.id} className="text-xs bg-white border border-yellow-200 text-gray-600 px-2 py-0.5 rounded-full">
+                          ₹{(a.amount - (a.repaid_amount || 0)).toLocaleString('en-IN')} · {a.request_date}
+                          {a.reason ? ` (${a.reason})` : ''}
+                        </span>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      className="mt-2 text-xs bg-yellow-600 text-white px-3 py-1 rounded-lg hover:bg-yellow-700 transition-colors"
+                      onClick={() => setCalcForm(p => ({ ...p, advance_deduction: p.pendingAdvanceTotal }))}
+                    >
+                      Use full amount as deduction
+                    </button>
+                  </div>
+                </div>
+              )}
+              {calcForm.pendingAdvanceTotal === 0 && (
+                <div className="px-3 py-2 bg-green-50 border border-green-100 rounded-xl flex items-center gap-2 text-xs text-green-700">
+                  <CheckCircle size={14} /> No pending advances for this employee
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="label">Base Salary</label>
@@ -129,8 +177,13 @@ export default function Payroll() {
                     onChange={e => setCalcForm(p => ({ ...p, incentive: e.target.value }))} />
                 </div>
                 <div>
-                  <label className="label">Advance Deduction (₹)</label>
-                  <input type="number" className="input" value={calcForm.advance_deduction}
+                  <label className="label">Advance Deduction (₹)
+                    {calcForm.pendingAdvanceTotal > 0 && (
+                      <span className="ml-1 text-xs text-yellow-600 font-normal">(pending: {fmt(calcForm.pendingAdvanceTotal)})</span>
+                    )}
+                  </label>
+                  <input type="number" className={`input ${calcForm.pendingAdvanceTotal > 0 ? 'border-yellow-300 focus:border-yellow-500' : ''}`}
+                    value={calcForm.advance_deduction}
                     onChange={e => setCalcForm(p => ({ ...p, advance_deduction: e.target.value }))} />
                 </div>
                 <div>
